@@ -82,3 +82,240 @@ This lab focuses on building a practical Python-based SOC analyst tool. You will
 - Real Python - Python API Tutorial: https://realpython.com/python-api/
 - Python argparse Module: https://docs.python.org/3/library/argparse.html
 - Regex101 - Test Regular Expressions: https://regex101.com/
+
+---
+
+## How to Use soc-analyzer.py
+
+The tool provides five main commands: `parse`, `extract`, `intel`, `alert`, and `report`.
+
+### Quick Start
+
+```
+python soc-analyzer.py --help
+```
+
+This displays the help menu with all available commands and options.
+
+### Command 1: Parse Logs
+
+Parses a log file and displays statistics.
+
+**Syntax:**
+```bash
+python soc-analyzer.py parse -f <logfile> [--format <type>] [--search <keyword>]
+```
+
+**Examples:**
+
+1. Parse an Apache access log:
+```bash
+python soc-analyzer.py parse -f access.log --format apache
+```
+
+2. Parse a syslog file:
+```bash
+python soc-analyzer.py parse -f /var/log/syslog --format syslog
+```
+
+3. Search for a specific term in parsed logs:
+```bash
+python soc-analyzer.py parse -f auth.log --search "Failed password"
+```
+
+### Command 2: Extract IOCs
+
+Extracts Indicators of Compromise from a file.
+
+**Syntax:**
+```bash
+python soc-analyzer.py extract -f <file> [--type <iotype>] [-o <output.json>]
+```
+
+**Examples:**
+
+1. Extract all IOCs from a log file:
+```bash
+python soc-analyzer.py extract -f firewall.log
+```
+
+2. Extract only IP addresses:
+```bash
+python soc-analyzer.py extract -f auth.log --type ipv4
+```
+
+3. Extract IOCs and save to a JSON file:
+```bash
+python soc-analyzer.py extract -f malware.log -o extracted_iocs.json
+```
+
+### Command 3: Check Threat Intelligence
+
+Checks IP addresses against threat intelligence databases.
+
+**Syntax:**
+```bash
+python soc-analyzer.py intel --ip <ip> | -f <ipfile> [-o <output.json>]
+```
+
+**Examples:**
+
+1. Check a single suspicious IP:
+```bash
+python soc-analyzer.py intel --ip 192.168.100.50
+```
+
+2. Check multiple IPs from a file:
+```bash
+python soc-analyzer.py intel -f suspicious_ips.txt
+```
+
+3. Save threat intelligence report to JSON:
+```bash
+python soc-analyzer.py intel -f iocs.txt -o threat_intel_report.json
+```
+
+### Command 4: Generate Alert
+
+Generates a structured security alert.
+
+**Syntax:**
+```bash
+python soc-analyzer.py alert -t <type> -s <severity> [--src <ip>] [--dst <ip>] [-d <description>]
+```
+
+**Examples:**
+
+1. Generate a high-severity brute force alert:
+```bash
+python soc-analyzer.py alert -t "Brute Force Attack" -s high --src 10.0.0.15 -d "Multiple failed SSH attempts detected"
+```
+
+2. Generate a critical ransomware alert:
+```bash
+python soc-analyzer.py alert -t "Ransomware Indicator" -s critical -d "Encrypted file extensions detected"
+```
+
+3. Generate a medium alert with destination:
+```bash
+python soc-analyzer.py alert -t "Data Exfiltration" -s medium --src 192.168.1.50 --dst 203.0.113.10 -d "Large outbound data transfer"
+```
+
+### Command 5: Generate Full Report
+
+Runs all modules and compiles a comprehensive analysis report.
+
+**Syntax:**
+```bash
+python soc-analyzer.py report -f <logfile> -o <report.json> [-v]
+```
+
+**Examples:**
+
+1. Generate a full report from a firewall log:
+```bash
+python soc-analyzer.py report -f firewall.log -o report.json
+```
+
+2. Generate a report with verbose console output:
+```bash
+python soc-analyzer.py report -f auth.log -o auth_analysis.json -v
+```
+
+3. Generate a report from multiple log sources (run separately then compare):
+```bash
+python soc-analyzer.py report -f apache.log -o apache_report.json
+python soc-analyzer.py report -f syslog.log -o syslog_report.json
+```
+
+---
+
+## Step-by-Step Workflow: Real-World SOC Investigation
+
+Below is a complete workflow demonstrating how a SOC analyst would use the tool during an incident.
+
+### Scenario: Investigating Suspicious Activity on a Web Server
+
+**Step 1 - Parse the Access Log**
+
+Start by parsing the Apache access log to understand activity patterns:
+
+```bash
+python soc-analyzer.py parse -f access.log --format apache
+```
+
+Look for unusual patterns such as:
+- Multiple requests from the same IP
+- Requests to sensitive paths (e.g., `/admin`, `/wp-admin`)
+- Non-standard user agents
+
+**Step 2 - Extract IOCs**
+
+Extract all indicators from the access log:
+
+```bash
+python soc-analyzer.py extract -f access.log -o access_iocs.json
+```
+
+Review the JSON output for:
+- Suspicious IP addresses
+- Malicious URLs or domains
+- File hashes if any
+
+**Step 3 - Check Threat Intelligence**
+
+Create a text file with suspicious IPs found in Step 2, then check each one:
+
+```bash
+python soc-analyzer.py intel -f suspicious_ips.txt -o threat_check.json
+```
+
+Interpret results:
+- Abuse score > 50: high confidence suspicious
+- Abuse score 10-50: investigate further
+- Abuse score 0-10: likely benign
+
+**Step 4 - Generate Alerts**
+
+For each confirmed threat, generate an alert:
+
+```bash
+python soc-analyzer.py alert -t "Web Attack" -s high --src 203.0.113.45 -d "SQL injection attempts from known malicious IP"
+python soc-analyzer.py alert -t "Brute Force" -s medium --src 198.51.100.22 -d "Multiple failed login attempts detected"
+```
+
+**Step 5 - Generate Final Report**
+
+Compile everything into a final report:
+
+```bash
+python soc-analyzer.py report -f access.log -o investigation_report.json -v
+```
+
+This produces a JSON report combining all module results, ready for:
+- Sharing with the incident response team
+- Storing in the ticketing system
+- Archiving for future reference
+
+---
+
+## Quick Reference Table
+
+| Command | Short Flag | Description |
+|---------|-----------|-------------|
+| `python soc-analyzer.py parse` | `-f, --file` | Parse and analyze a log file |
+| `python soc-analyzer.py extract` | `-f, -o` | Extract IOCs and save to JSON |
+| `python soc-analyzer.py intel` | `--ip, -f, -o` | Check IP reputation |
+| `python soc-analyzer.py alert` | `-t, -s, --src` | Generate a security alert |
+| `python soc-analyzer.py report` | `-f, -o, -v` | Generate full analysis report |
+| `python soc-analyzer.py --help` | | Show all available options |
+
+---
+
+## Tips for Best Results
+
+1. **Always use verbose mode (`-v`)** when generating reports during active investigations to see real-time output.
+2. **Run `extract` before `intel`** to get a list of IOCs, then check those IOCs against threat intelligence.
+3. **Save outputs to JSON** (`-o`) for easy sharing and integration with other SOC tools.
+4. **Use `--search` with `parse`** to quickly filter large log files for specific events.
+5. ** Keep a threat intel IP list** updated regularly for quick bulk checking during incidents.
